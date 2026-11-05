@@ -1,0 +1,14 @@
+{
+  "name": "Android Mirror",
+  "short_name": "Android Mirror",
+  "description": "Wireless Android screen mirroring with adb + scrcpy",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#2563eb",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}

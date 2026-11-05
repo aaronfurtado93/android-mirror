@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Android Mirror</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='8' y='2' width='16' height='28' rx='4' fill='%233b82f6'/><rect x='11' y='6' width='10' height='18' rx='1.5' fill='white'/></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x="8" y="2" width="16" height="28" rx="4" fill="var(--accent)"/><rect x="11" y="6" width="10" height="18" rx="1.5" fill="var(--bg)"/></svg>
+      <div>
+        <h1>Android Mirror</h1>
+        <div id="tools" class="tools"></div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="conn" class="conn" title="Connection to local server"></span>
+      <button id="btn-scan" class="btn">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0-8-8"/><path d="M12 16a4 4 0 1 0-4-4"/><circle cx="12" cy="12" r="1"/></svg>
+        <span>Scan network</span>
+      </button>
+      <button id="btn-add" class="btn primary">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Add device</span>
+      </button>
+      <div class="menu-wrap">
+        <button id="btn-more" class="btn icon" aria-label="More"><svg class="ico" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button>
+        <div id="more-menu" class="menu" hidden>
+          <button data-act="activity">Activity log</button>
+          <button data-act="toggle-window" id="menu-window" class="check">Open in its own window</button>
+          <button data-act="setup">Setup &amp; dependencies</button>
+          <button data-act="restart-adb">Restart adb server</button>
+          <button data-act="help">Setup guide</button>
+          <button data-act="dev" id="menu-dev" hidden>Developer options</button>
+          <button data-act="about">About &amp; credits</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="banner"></div>
+
+    <section>
+      <div class="section-head">
+        <h2>Your devices</h2>
+        <span class="muted small">Remembered automatically. Devices reconnect on their own when they appear on the network.</span>
+      </div>
+      <div id="device-grid" class="grid"></div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Found on your network</h2>
+        <span id="scan-status" class="muted small"></span>
+      </div>
+      <div id="scan-progress" class="progress" hidden><div></div></div>
+      <div id="found-list" class="list"></div>
+    </section>
+  </main>
+
+  <!-- Activity drawer -->
+  <aside id="activity" class="drawer" hidden>
+    <div class="drawer-head">
+      <h3>Activity</h3>
+      <label class="small muted"><input type="checkbox" id="log-debug"> show details</label>
+      <button class="btn icon" data-close-drawer aria-label="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div id="log" class="log"></div>
+  </aside>
+
+  <!-- Add device -->
+  <dialog id="add-dialog">
+    <form method="dialog" class="dlg-head">
+      <h3>Add a device</h3>
+      <button class="btn icon" aria-label="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </form>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="qr" class="active">QR code <span class="tag">easiest</span></button>
+      <button role="tab" data-tab="code">Pairing code</button>
+      <button role="tab" data-tab="usb">USB cable</button>
+      <button role="tab" data-tab="ip">IP address</button>
+    </div>
+
+    <div class="tab-body" data-panel="qr">
+      <div class="qr-layout">
+        <div id="qr-box" class="qr-box"></div>
+        <div>
+          <ol class="steps">
+            <li>Phone and computer on the <b>same Wi-Fi</b>.</li>
+            <li>On the phone open <b>Settings › Developer options › Wireless debugging</b> and switch it on.</li>
+            <li>Tap <b>Pair device with QR code</b> and scan this code.</li>
+          </ol>
+          <div id="qr-status" class="status-line"></div>
+          <p class="small muted">No Developer options? Settings › About phone › tap <b>Build number</b> 7 times. <a href="#" data-act="help">Full guide</a></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-body" data-panel="code" hidden>
+      <ol class="steps">
+        <li>On the phone: <b>Wireless debugging › Pair device with pairing code</b>.</li>
+        <li>Pick the phone below (or type the IP address &amp; port shown there), then enter the 6-digit code.</li>
+      </ol>
+      <div id="pair-candidates" class="chips"></div>
+      <form id="pair-form" class="form-row">
+        <label>Pairing address<input name="target" placeholder="192.168.1.20:37185" required autocomplete="off"></label>
+        <label>Code<input name="code" placeholder="123456" inputmode="numeric" maxlength="6" required autocomplete="off"></label>
+        <button class="btn primary">Pair</button>
+      </form>
+      <div id="pair-result" class="status-line"></div>
+    </div>
+
+    <div class="tab-body" data-panel="usb" hidden>
+      <ol class="steps">
+        <li>Enable <b>USB debugging</b> in Developer options and plug the phone in.</li>
+        <li>Tap <b>Allow</b> on the phone when asked (tick "Always allow").</li>
+        <li>Mirror over the cable, or press <b>Switch to Wi-Fi</b> to go wireless (works on any Android version; lasts until the phone reboots).</li>
+      </ol>
+      <div id="usb-list" class="list"></div>
+    </div>
+
+    <div class="tab-body" data-panel="ip" hidden>
+      <p class="muted">For phones already paired with this computer, or using <code>adb tcpip</code>. Port is shown on the main Wireless debugging screen.</p>
+      <form id="ip-form" class="form-row">
+        <label>IP address : port<input name="target" placeholder="192.168.1.20:41235" required autocomplete="off"></label>
+        <button class="btn primary">Connect</button>
+        <button type="button" id="btn-find-port" class="btn" title="Scans the IP for the Wireless debugging port">Only know the IP? Find port</button>
+      </form>
+      <div id="hostscan-progress" class="progress" hidden><div></div></div>
+      <div id="ip-result" class="status-line"></div>
+    </div>
+  </dialog>
+
+  <!-- Device settings -->
+  <dialog id="settings-dialog">
+    <form method="dialog" class="dlg-head">
+      <h3 id="settings-title">Device settings</h3>
+      <button class="btn icon" aria-label="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </form>
+    <form id="settings-form" class="settings">
+      <label class="full">Name<input name="nickname" placeholder="e.g. My phone" maxlength="60"></label>
+      <fieldset class="full">
+        <legend>Connection</legend>
+        <label class="switch"><input type="checkbox" name="autoConnect"><span></span>Reconnect automatically when it appears on the network</label>
+        <label class="switch"><input type="checkbox" name="autoMirror"><span></span>Start mirroring as soon as it connects</label>
+        <label class="switch"><input type="checkbox" name="keepAlive"><span></span>Resume mirroring if the connection drops</label>
+        <label class="switch"><input type="checkbox" name="s.preferUsb"><span></span>Prefer USB when plugged in</label>
+      </fieldset>
+      <fieldset class="full">
+        <legend>Quality</legend>
+        <div class="seg" id="presets">
+          <button type="button" data-preset="smooth">Smooth<small>1280p · 4 Mbps</small></button>
+          <button type="button" data-preset="balanced">Balanced<small>1920p · 8 Mbps</small></button>
+          <button type="button" data-preset="sharp">Sharp<small>native · 16 Mbps</small></button>
+          <button type="button" data-preset="custom">Custom</button>
+        </div>
+        <div class="cols3">
+          <label>Max size (px, 0 = native)<input type="number" name="s.maxSize" min="0" max="8192" step="8"></label>
+          <label>Bitrate (Mbps)<input type="number" name="s.videoBitRate" min="1" max="200"></label>
+          <label>Max FPS (0 = no limit)<input type="number" name="s.maxFps" min="0" max="240"></label>
+          <label>Codec<select name="s.videoCodec"><option value="h264">H.264 (most compatible)</option><option value="h265">H.265</option><option value="av1">AV1</option></select></label>
+          <label>Keyboard<select name="s.keyboard"><option value="sdk">Standard</option><option value="uhid">Physical keyboard (UHID)</option><option value="aoa">AOA (USB only)</option></select></label>
+        </div>
+      </fieldset>
+      <fieldset class="full">
+        <legend>Behaviour</legend>
+        <div class="cols2">
+          <label class="switch"><input type="checkbox" name="s.audio"><span></span>Forward audio (Android 11+)</label>
+          <label class="switch"><input type="checkbox" name="s.stayAwake"><span></span>Keep phone awake</label>
+          <label class="switch"><input type="checkbox" name="s.turnScreenOff"><span></span>Turn phone screen off</label>
+          <label class="switch"><input type="checkbox" name="s.showTouches"><span></span>Show touches</label>
+          <label class="switch"><input type="checkbox" name="s.alwaysOnTop"><span></span>Window always on top</label>
+          <label class="switch"><input type="checkbox" name="s.borderless"><span></span>Borderless window</label>
+          <label class="switch"><input type="checkbox" name="s.fullscreen"><span></span>Start fullscreen</label>
+          <label class="switch"><input type="checkbox" name="s.powerOffOnClose"><span></span>Lock phone when window closes</label>
+          <label class="switch"><input type="checkbox" name="s.noControl"><span></span>View only (no mouse/keyboard)</label>
+        </div>
+        <label>Extra scrcpy options<input name="s.extraArgs" placeholder="e.g. --crop=1080:1920:0:0 --record=/tmp/rec.mp4" autocomplete="off"></label>
+      </fieldset>
+      <div class="dlg-foot full">
+        <button type="button" class="btn danger ghost" id="btn-forget">Forget device</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Troubleshooter -->
+  <dialog id="trouble-dialog">
+    <form method="dialog" class="dlg-head">
+      <h3 id="trouble-title">Troubleshoot</h3>
+      <button class="btn icon" aria-label="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </form>
+    <div id="trouble-body"></div>
+  </dialog>
+
+  <!-- Setup / dependencies -->
+  <dialog id="setup-dialog">
+    <form method="dialog" class="dlg-head">
+      <h3>Setup &amp; dependencies</h3>
+      <button class="btn icon" aria-label="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </form>
+    <div id="setup-body" class="setup"></div>
+  </dialog>
+
+  <!-- About -->
+  <dialog id="about-dialog">
+    <form method="dialog" class="dlg-head">
+      <h3>About</h3>
+      <button class="btn icon" aria-label="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </form>
+    <div id="about-body" class="about"></div>
+  </dialog>
+
+  <!-- Developer options (easter egg: tap the icon in About 7 times) -->
+  <dialog id="dev-dialog">
+    <form method="dialog" class="dlg-head">
+      <h3>Developer options</h3>
+      <button class="btn icon" aria-label="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </form>
+    <div id="dev-body" class="about"></div>
+  </dialog>
+
+  <!-- Help -->
+  <dialog id="help-dialog">
+    <form method="dialog" class="dlg-head">
+      <h3>Setup guide</h3>
+      <button class="btn icon" aria-label="Close"><svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </form>
+    <div class="help">
+      <h4>1 · Turn on Developer options (once)</h4>
+      <p>Settings › About phone › tap <b>Build number</b> seven times (Samsung: About phone › Software information › Build number).</p>
+      <h4>2 · Pair over Wi-Fi (once per phone, Android 11+)</h4>
+      <p>Settings › Developer options › <b>Wireless debugging</b> → on → <b>Pair device with QR code</b>, then use <i>Add device › QR code</i> here. After that the phone is remembered.</p>
+      <h4>3 · Everyday use</h4>
+      <p>Turn on Wireless debugging (tip: add the <b>Wireless debugging</b> quick-settings tile via Developer options › Quick settings developer tiles). This app spots the phone on the network and reconnects by itself — even when its port or IP address changed. Press <b>Mirror</b>.</p>
+      <h4>Older phones (Android 10 and below)</h4>
+      <p>Use <i>Add device › USB cable</i> and press <b>Switch to Wi-Fi</b>. Repeat after each phone reboot.</p>
+      <h4>Something not working?</h4>
+      <p>Press <b>Troubleshoot</b> on the device card. It checks adb, looks for the phone on the network by name and hardware address, follows a changed IP or port, cleans up stale connections and tells you exactly what to do if it still can't connect.</p>
+      <p class="small muted">Guest Wi-Fi networks and "AP/client isolation" block phone↔computer traffic. VPNs on the phone can too.</p>
+    </div>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "android-mirror"
+dynamic = ["version"]
+description = "Local web control panel for wireless Android screen mirroring with adb + scrcpy"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Aaron Furtado" }]
+keywords = ["android", "scrcpy", "adb", "screen-mirroring", "wireless-debugging"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "aiohttp>=3.9,<4",
+    "segno>=1.6",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.5", "build>=1"]
+
+[project.scripts]
+android-mirror = "android_mirror.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "android_mirror.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+android_mirror = ["web/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 140
+target-version = "py39"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC"]
+ignore = [
+    "S101",   # asserts in tests
+    "S104",   # binding 0.0.0.0 is an explicit opt-in (--host)
+    "S310",   # urlopen on fixed https URLs
+    "S311",   # random is not used for security (secrets is)
+    "S603", "S607",  # subprocess with argv lists is the point of this app
+    "B008",
+    "E501",   # long user-facing strings; the formatter handles code
+    "UP007", "UP045",  # keep `X | None` via __future__ annotations, works on 3.9
+    "ASYNC109", "ASYNC221", "ASYNC230",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]
